@@ -156,7 +156,16 @@
   }
   .nav-cta:hover { background: var(--dark2); }
 
+  @media (max-width: 640px) {
+    .nav-inner { flex-wrap: wrap; row-gap: 0.6rem; }
+    .brand-mark { flex: 1 1 100%; }
+    .nav-actions { flex: 1 1 100%; justify-content: space-between; }
+    .wordmark { font-size: 0.95rem; }
+  }
+
   .lang-select {
+    flex-shrink: 0;
+    min-width: 4.6em;
     font-family: var(--font-label);
     font-size: 0.72rem;
     font-weight: 600;
@@ -168,6 +177,8 @@
     cursor: pointer;
   }
   .theme-toggle {
+    flex-shrink: 0;
+    white-space: nowrap;
     font-family: var(--font-label);
     font-size: 0.68rem;
     background: none;
@@ -452,6 +463,33 @@
   .included-list { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 1.5rem; font-size: 0.88rem; color: var(--ink-soft); }
   .included-list li { position: relative; padding: 0.25rem 0 0.25rem 1.1rem; break-inside: avoid; }
   .included-list li::before { content: "•"; color: var(--gold-soft); position: absolute; left: 0; font-size: 1.1em; }
+
+  /* ---------- lightbox ---------- */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 90;
+    background: rgba(10,7,5,0.94);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .lightbox-close, .lightbox-prev, .lightbox-next {
+    position: fixed;
+    background: rgba(26,20,16,0.7);
+    color: #f5e6c8;
+    border: 1px solid rgba(245,230,200,0.3);
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .lightbox-close { top: 1rem; right: 1rem; }
+  .lightbox-prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+  .lightbox-next { right: 1rem; top: 50%; transform: translateY(-50%); }
+  .gallery-item { cursor: zoom-in; }
 
   /* ---------- gallery ---------- */
   .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; }
@@ -971,6 +1009,13 @@
   </div>
 </footer>
 
+<div class="lightbox" id="lightbox">
+  <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Închide">✕</button>
+  <button type="button" class="lightbox-prev" id="lightboxPrev" aria-label="Poza anterioară">←</button>
+  <img id="lightboxImg" src="" alt="" />
+  <button type="button" class="lightbox-next" id="lightboxNext" aria-label="Poza următoare">→</button>
+</div>
+
 <script>
 (function () {
   var root = document.documentElement;
@@ -1154,6 +1199,46 @@
       applyLanguage(langSelect.value);
     });
   }
+
+  // ---- lightbox pentru galerie ----
+  var lightbox = document.getElementById('lightbox');
+  var lightboxImg = document.getElementById('lightboxImg');
+  var galleryImgs = [];
+  var lightboxIndex = 0;
+
+  function refreshGalleryImgs() {
+    galleryImgs = Array.prototype.slice.call(document.querySelectorAll('#galerie .gallery-item img'));
+  }
+  function openLightbox(idx) {
+    if (!galleryImgs.length) return;
+    lightboxIndex = (idx + galleryImgs.length) % galleryImgs.length;
+    lightboxImg.src = galleryImgs[lightboxIndex].src;
+    lightboxImg.alt = galleryImgs[lightboxIndex].alt || '';
+    lightbox.classList.add('open');
+  }
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxImg.src = '';
+  }
+  refreshGalleryImgs();
+  document.getElementById('galerie').addEventListener('click', function (e) {
+    var item = e.target.closest('.gallery-item');
+    if (!item) return;
+    refreshGalleryImgs();
+    var img = item.querySelector('img');
+    var idx = galleryImgs.indexOf(img);
+    if (idx > -1) openLightbox(idx);
+  });
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightboxPrev').addEventListener('click', function (e) { e.stopPropagation(); openLightbox(lightboxIndex - 1); });
+  document.getElementById('lightboxNext').addEventListener('click', function (e) { e.stopPropagation(); openLightbox(lightboxIndex + 1); });
+  lightbox.addEventListener('click', function (e) { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', function (e) {
+    if (!lightbox.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') openLightbox(lightboxIndex - 1);
+    if (e.key === 'ArrowRight') openLightbox(lightboxIndex + 1);
+  });
 })();
 </script>
 </body>
